@@ -1,0 +1,62 @@
+.statusBar {
+  height: var(--status-h);
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+
+.msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+.dot.err {
+  background: var(--red);
+}
+
+.dot.proc {
+  background: var(--orange);
+  animation: pulse-fast 0.7s ease-in-out infinite;
+}
+
+@keyframes pulse-fast {
+  0%,100% { opacity: 1; box-shadow: 0 0 8px var(--orange); }
+  50% { opacity: 0.4; box-shadow: none; }
+}
+
+.counters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.count {
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.count span {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+}

@@ -1,0 +1,409 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-base);
+}
+
+.header {
+  height: 60px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  font-family: var(--ff-disp);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.5px;
+}
+
+.logoAccent {
+  color: var(--cyan);
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.85;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pipelineStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+  min-width: 64px;
+}
+
+.pipelineStep.active {
+  background: var(--bg-surface);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px rgba(0, 200, 248, 0.25);
+}
+
+.pipelineStep.done {
+  border-color: var(--green);
+  background: rgba(52, 231, 157, 0.05);
+}
+
+.stepNum {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-3);
+  font-family: var(--ff-mono);
+  letter-spacing: 0.5px;
+}
+
+.pipelineStep.active .stepNum {
+  color: var(--cyan);
+}
+
+.pipelineStep.done .stepNum {
+  color: var(--green);
+}
+
+.stepLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pipelineStep.active .stepLabel {
+  color: var(--text-1);
+}
+
+.pipelineArrow {
+  color: var(--border);
+  font-size: 18px;
+  margin: 0 4px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aiStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.aiDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.aiDot.processing {
+  animation: pulse 1.5s ease infinite;
+  background: var(--cyan);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.aiLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  font-family: var(--ff-mono);
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.userChip:hover {
+  border-color: var(--cyan);
+}
+
+.userAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: #050812;
+  font-weight: 800;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userName {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-1);
+  font-family: var(--ff-mono);
+}
+
+.hdrBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--ff-mono);
+}
+
+.hdrBtn:hover {
+  color: var(--text-1);
+  border-color: var(--cyan);
+  background: var(--bg-surface);
+}
+
+.hdrBtnSave {
+  color: var(--cyan);
+}
+
+.hdrBtnSave.saved {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.hdrBtnLogout:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.headerRight button {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.headerRight button:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.saved {
+  border-color: var(--green) !important;
+  color: var(--green) !important;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.roomTypeSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(10, 14, 26, 0.92);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  /* Height is controlled by leftOverlay container, not here */
+  min-height: 0;
+  max-height: 100%;
+}
+
+.roomTypeSidebarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roomTypeSidebarTitle {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.roomTypeSidebarSub {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.roomTypeSidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.roomTypeSidebarList::-webkit-scrollbar { width: 4px; }
+.roomTypeSidebarList::-webkit-scrollbar-track { background: transparent; }
+.roomTypeSidebarList::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+.roomTypeOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-1);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.roomTypeOption:hover:not(:disabled) {
+  border-color: var(--cyan);
+  background: rgba(0,200,248,0.08);
+  transform: translateY(-1px);
+}
+
+.roomTypeOption:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.roomTypeOptionActive {
+  border-color: rgba(0,200,248,0.35);
+  background: rgba(0,200,248,0.1);
+}
+
+.roomTypeOptionName {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.roomTypeOptionBadge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,200,248,0.25);
+  background: rgba(0,200,248,0.08);
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+/* ── VLAN toggle button ── */
+.hdrBtnVlanActive {
+  border-color: var(--purple) !important;
+  color: var(--purple) !important;
+  background: rgba(139,92,246,0.12) !important;
+}
+
+/* ── VLAN legend overlay ── */
+.vlanLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-hi);
+  background: rgba(10, 14, 26, 0.92);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  min-width: 160px;
+}
+
+.vlanLegendTitle {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.vlanLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vlanLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vlanLegendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.vlanLegendLabel {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+}

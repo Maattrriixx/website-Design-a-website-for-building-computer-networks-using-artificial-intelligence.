@@ -1,0 +1,261 @@
+.canvasArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+/* ── Topbar ── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+
+.topbarLeft {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.path {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+/* ── Breadcrumb (room view) ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--cyan);
+  border-radius: 6px;
+  color: var(--cyan);
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  line-height: 1;
+}
+
+.backBtn:hover {
+  background: var(--cyan-dim);
+  box-shadow: 0 0 8px var(--cyan-glow);
+}
+
+.breadcrumbSep {
+  font-size: 13px;
+  color: var(--text-3);
+  user-select: none;
+}
+
+.breadcrumbCurrent {
+  font-size: 11px;
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: 0.3px;
+}
+
+/* ── Topbar right controls ── */
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.toolBtn {
+  width: 26px;
+  height: 26px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  border-radius: var(--r1);
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.toolBtn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.zoomVal {
+  font-size: 10px;
+  color: var(--text-3);
+  min-width: 36px;
+  text-align: center;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* ── Viewport ── */
+.viewport {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.canvasStage {
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px 24px 28px;
+  box-sizing: border-box;
+}
+
+.leftOverlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 240px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+  pointer-events: auto;
+  /* Scrollbar styling */
+}
+
+.leftOverlay::-webkit-scrollbar { width: 4px; }
+.leftOverlay::-webkit-scrollbar-track { background: transparent; }
+.leftOverlay::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+canvas {
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  transition: width 0.25s var(--ease), height 0.25s var(--ease);
+  cursor: crosshair;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.emptyState {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.emptyIcon {
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 8px;
+  font-family: var(--ff-sans);
+}
+
+.emptyDesc {
+  font-size: 13px;
+  color: var(--text-3);
+  font-family: var(--ff-sans);
+  max-width: 280px;
+}
+
+/* ── Device tooltip ── */
+.tooltip {
+  position: absolute;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 100;
+  min-width: 160px;
+}
+
+.tooltipType {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--ff-mono);
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-family: var(--ff-mono);
+}
+
+.tooltipRow:last-child {
+  margin-bottom: 0;
+}
+
+.tooltipLabel {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.tooltipValue {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+/* ── Bottom slot (room-types panel) ── */
+.bottomSlot {
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 12px 14px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.bottomSlot::-webkit-scrollbar { width: 5px; }
+.bottomSlot::-webkit-scrollbar-track { background: transparent; }
+.bottomSlot::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+.rightOverlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.rightOverlay::-webkit-scrollbar { width: 4px; }
+.rightOverlay::-webkit-scrollbar-track { background: transparent; }
+.rightOverlay::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
