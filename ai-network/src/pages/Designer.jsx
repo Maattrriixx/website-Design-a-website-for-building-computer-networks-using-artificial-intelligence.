@@ -9,6 +9,7 @@ import StatusBar from '../components/StatusBar';
 import LoadingOverlay from '../components/LoadingOverlay';
 import styles from './Designer.module.css';
 import { ProjectsAPI, RoomsAPI, DevicesAPI, API_CONFIG } from '../services/api';
+import { exportRoomsPdf } from '../utils/exportPdf';
 
 // Device colors mapping
 const DEVICE_COLORS = {
@@ -1440,13 +1441,16 @@ export default function Designer() {
   };
 
   // ─── Export / Save ───────────────────────────────────────────────────────────
-  const exportDesign = () => {
-    if (!floorPlan) { setStatus({ msg: 'Nothing to export', type: 'err' }); return; }
-    const link = document.createElement('a');
-    link.download = 'network-design.png';
-    link.href = mainCanvasRef.current.toDataURL('image/png');
-    link.click();
-    setStatus({ msg: 'Exported as network-design.png', type: 'ok' });
+  const exportDesign = async () => {
+    if (!currentProjectId) { setStatus({ msg: 'Save the project before exporting', type: 'err' }); return; }
+    try {
+      setStatus({ msg: 'Generating PDF…', type: 'ok' });
+      const data = await ProjectsAPI.getRoomsWithDevices(currentProjectId);
+      exportRoomsPdf(data);
+      setStatus({ msg: 'Exported as PDF', type: 'ok' });
+    } catch (err) {
+      setStatus({ msg: `Export failed: ${err.message}`, type: 'err' });
+    }
   };
 
   const saveProject = async () => {
@@ -2231,7 +2235,7 @@ const handleDeviceModalCancel = () => setPendingDevice(null);
               {viewMode === 'vlan' ? 'Network View' : 'VLAN View'}
             </button>
           )}
-          <button className={styles.hdrBtn} onClick={exportDesign} title="Export PNG">
+          <button className={styles.hdrBtn} onClick={exportDesign} title="Export PDF">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>

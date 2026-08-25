@@ -124,6 +124,10 @@ export const ProjectsAPI = {
     const data = await _apiRequest('GET', `/projects/${projectId}/topology`);
     return data;
   },
+  async getRoomsWithDevices(projectId) {
+    const data = await _apiRequest('GET', `/projects/${projectId}/rooms-devices`);
+    return data;
+  },
   async getFullProject(projectId) {
     const data = await _apiRequest('GET', `/projects/${projectId}/full`);
     return data;
