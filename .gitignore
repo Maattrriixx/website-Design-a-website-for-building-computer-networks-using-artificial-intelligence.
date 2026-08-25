@@ -26,4 +26,4 @@ Thumbs.db
 /vendor
 /node_modules
 /public/storage
-.env
+.envpy/floorplan_segmentation_final.keras 
