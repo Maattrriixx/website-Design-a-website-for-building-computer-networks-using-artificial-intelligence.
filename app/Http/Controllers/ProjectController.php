@@ -323,11 +323,11 @@ public function DeleteProject(Project $project)
 
         foreach ($devices as $device) {
             $result[] = [
-                'device_code' => $device->device_code,
+                //'device_code' => $device->device_code,
                 'type'        => $device->type,
                 'quantity'    => $device->quantity,
-                'model'       => $device->model,
-                'status'      => $device->status,
+               // 'model'       => $device->model,
+              //  'status'      => $device->status,
             ];
 
             if (in_array($device->type, ['Endpoint', 'Camera'])) {

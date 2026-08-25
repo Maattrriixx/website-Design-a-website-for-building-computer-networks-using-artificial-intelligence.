@@ -12,24 +12,34 @@ import { ProjectsAPI, RoomsAPI, DevicesAPI, API_CONFIG } from '../services/api';
 
 // Device colors mapping
 const DEVICE_COLORS = {
-  nvr:      '#22c55e',
-  endpoint: '#34e79d',
-  camera:   '#f59e0b',
-  switch:   '#ff6b35',
-  router:   '#00c8f8',
-  firewall: '#ef4444',
-  server:   '#10b981',
-  ups:      '#a78bfa',
+  nvr:         '#22c55e',
+  endpoint:    '#34e79d',
+  camera:      '#f59e0b',
+  switch:      '#ff6b35',
+  router:      '#00c8f8',
+  firewall:    '#ef4444',
+  server:      '#10b981',
+  ups:         '#a78bfa',
+  core_switch: '#fb923c',
+  proxy:       '#eab308',
+  modem:       '#06b6d4',
+  dns:         '#818cf8',
+  dhcp:        '#f472b6',
 };
 const DEVICE_SCALE_BY_TYPE = {
-  nvr:      0.90,
-  endpoint: 0.92,
-  camera:   0.95,
-  switch:   1.05,
-  router:   1.08,
-  firewall: 1.10,
-  server:   1.12,
-  ups:      1.08,
+  nvr:         0.90,
+  endpoint:    0.92,
+  camera:      0.95,
+  switch:      1.05,
+  router:      1.08,
+  firewall:    1.10,
+  server:      1.12,
+  ups:         1.08,
+  core_switch: 1.15,
+  proxy:       0.95,
+  modem:       0.92,
+  dns:         0.90,
+  dhcp:        0.90,
 };
 
 const ROOM_COLORS = ['#00c8f8', '#34e79d', '#ff6b35', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#22c55e', '#38bdf8', '#a78bfa'];
@@ -418,14 +428,27 @@ export default function Designer() {
   }, [_randomPointInRoom, _separateDevicesInRoom]);
 
   const _normalizeDeviceType = (type) => {
-    const normalized = String(type || '').trim().toLowerCase();
+    // وحّد الفراغات والشرطات إلى "_" قبل المقارنة، مشان "Core Switch" أو
+    // "core-switch" أو "core_switch" كلهن يطلعوا نفس القيمة الموحّدة.
+    const normalized = String(type || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
     // If already a valid type, return as-is
-    const valid = ['nvr', 'endpoint', 'camera', 'switch', 'router', 'firewall', 'server', 'ups'];
+    const valid = [
+      'nvr', 'endpoint', 'camera', 'switch', 'router', 'firewall', 'server', 'ups',
+      'core_switch', 'proxy', 'modem', 'dns', 'dhcp',
+    ];
     return valid.includes(normalized) ? normalized : 'endpoint';
   };
   const _deviceTypeToBackend = (type) => {
     const normalized = _normalizeDeviceType(type);
-    const ACRONYMS = { nvr: 'NVR', ups: 'UPS' };
+    // أنواع بأحرف كبيرة بالكامل (اختصارات) أو بأسماء مكوّنة من كلمتين —
+    // لازم تطابق بالضبط اسم النوع كما هو مخزّن بالباك-إند.
+    const ACRONYMS = {
+      nvr: 'NVR',
+      ups: 'UPS',
+      dns: 'DNS',
+      dhcp: 'DHCP',
+      core_switch: 'Core Switch',
+    };
     return ACRONYMS[normalized] || (normalized.charAt(0).toUpperCase() + normalized.slice(1));
   };
 
@@ -1050,7 +1073,7 @@ export default function Designer() {
 
         // Fallback: سكّل إحداثيات الباك-إند وشوف أي غرفة تحتوي الجهاز
         // لكن الـ core devices طبيعتها تكون loose — لا نحطها بغرف
-        const coreTypes = ['router', 'firewall', 'server', 'ups'];
+        const coreTypes = ['router', 'firewall', 'server', 'ups', 'core_switch', 'modem'];
         const normalizedType = _normalizeDeviceType(device?.type);
         const isCoreDevice = coreTypes.includes(normalizedType) || device?.layer === 'Core';
 
@@ -1736,6 +1759,25 @@ const handleCanvasDrop = (e) => {
   const { type, room, point } = pendingDevice;
   setPendingDevice(null);
 
+  const needsPorts = ['switch', 'router', 'core_switch'].includes(type);
+
+  // تحقق: هل يوجد أصلاً جهاز من نفس النوع بنفس الغرفة، وبنفس VLAN،
+  // وبنفس عدد البورتات (إذا كان النوع يدعم بورتات)؟
+  const duplicate = devices.find(d =>
+    _sameEntityId(d.room, room.id) &&
+    d.type === type &&
+    (d.vlan_id ?? null) === (vlan_id ?? null) &&
+    (!needsPorts || Number(d.ports ?? 0) === Number(ports ?? 0))
+  );
+
+  if (duplicate) {
+    setStatus({
+      msg: 'لا يمكن إضافة جهاز مطابق (نفس النوع وVLAN والبورتات) — إذا أردت زيادة الكمية، يرجى الدخول إلى الغرفة وزيادة الكمية من هناك.',
+      type: 'err',
+    });
+    return;
+  }
+
   const backendType = _deviceTypeToBackend(type);
   const modelSize = 512;
 
@@ -1806,8 +1848,10 @@ const handleDeviceModalCancel = () => setPendingDevice(null);
   ) : null;
 
   const DeviceModal = ({ pending, onConfirm, onCancel }) => {
-  const needsPorts = ['switch', 'router'].includes(pending.type);
-  const portOptions = pending.type === 'switch'
+  const needsPorts = ['switch', 'router', 'core_switch'].includes(pending.type);
+  const portOptions = pending.type === 'core_switch'
+    ? [24, 48, 96]
+    : pending.type === 'switch'
     ? [8, 16, 24, 48]
     : [4, 8, 16];
 

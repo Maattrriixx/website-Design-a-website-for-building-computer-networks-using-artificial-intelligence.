@@ -213,12 +213,13 @@ export const DevicesAPI = {
     });
     return data;
   },
+  // Backend: PATCH /devices/{deviceId} (DeviceController::updateQuantity)
   async updateQuantity(deviceId, quantity) {
     const data = await _apiRequest('PATCH', `/devices/${deviceId}`, { quantity });
     return data;
   },
+  // Backend: DELETE /devices/{deviceId} (DeviceController::destroyDevice)
   async deleteDevice(deviceId) {
-    const data = await _apiRequest('DELETE', `/devices/${deviceId}`);
-    return data;
+    await _apiRequest('DELETE', `/devices/${deviceId}`);
   },
 };

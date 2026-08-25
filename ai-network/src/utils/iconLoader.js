@@ -61,7 +61,9 @@ export async function loadIcons() {
       
       // Build mapping from device type to icon ID
       icons.forEach(icon => {
-        const normalizedName = icon.name.toLowerCase().replace(/\s+/g, '_');
+        // وحّد الفراغات والشرطات إلى "_" (مو بس الفراغات) مشان أسماء
+        // مركّبة متل "Core Switch" أو "Core-Switch" توصل لنفس المفتاح "core_switch"
+        const normalizedName = icon.name.toLowerCase().trim().replace(/[\s-]+/g, '_');
         
         // Map each icon to its ID
         deviceTypeToIconId[normalizedName] = icon.id;
@@ -73,6 +75,13 @@ export async function loadIcons() {
       }
       if (deviceTypeToIconId['fire_wall']) {
         deviceTypeToIconId['firewall'] = deviceTypeToIconId['fire_wall'];
+      }
+      // Core Switch — دعم كل الأشكال الممكنة يلي ممكن يجي فيها الاسم من الباك-إند
+      if (!deviceTypeToIconId['core_switch'] && deviceTypeToIconId['coreswitch']) {
+        deviceTypeToIconId['core_switch'] = deviceTypeToIconId['coreswitch'];
+      }
+      if (!deviceTypeToIconId['coreswitch'] && deviceTypeToIconId['core_switch']) {
+        deviceTypeToIconId['coreswitch'] = deviceTypeToIconId['core_switch'];
       }
       
       console.log('Icons loaded successfully:', Object.keys(iconCache).length, 'icons');

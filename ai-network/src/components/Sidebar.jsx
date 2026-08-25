@@ -3,14 +3,19 @@ import styles from './Sidebar.module.css';
 import { getAllIconUrls, loadIcons } from '../utils/iconLoader';
 
 const DEVICE_COLORS = {
-  nvr:      '#22c55e',
-  endpoint: '#34e79d',
-  camera:   '#f59e0b',
-  switch:   '#ff6b35',
-  router:   '#00c8f8',
-  firewall: '#ef4444',
-  server:   '#10b981',
-  ups:      '#a78bfa',
+  nvr:         '#22c55e',
+  endpoint:    '#34e79d',
+  camera:      '#f59e0b',
+  switch:      '#ff6b35',
+  router:      '#00c8f8',
+  firewall:    '#ef4444',
+  server:      '#10b981',
+  ups:         '#a78bfa',
+  core_switch: '#fb923c',
+  proxy:       '#eab308',
+  modem:       '#06b6d4',
+  dns:         '#818cf8',
+  dhcp:        '#f472b6',
 };
 
 export default function Sidebar({ 
@@ -197,7 +202,10 @@ export default function Sidebar({
         <div className={styles.section}>
           <div className={styles.sectionLabel}>DEVICES <span className={styles.hint}>drag to canvas</span></div>
           <div className={styles.paletteGrid}>
-            {['nvr', 'endpoint', 'camera', 'switch', 'router', 'firewall', 'server', 'ups'].map(type => (
+            {[
+              'nvr', 'endpoint', 'camera', 'switch', 'router', 'firewall', 'server', 'ups',
+              'core_switch', 'proxy', 'modem', 'dns', 'dhcp',
+            ].map(type => (
               <div
                 key={type}
                 className={styles.palItem}
