@@ -308,8 +308,9 @@ public function DeleteProject(Project $project)
             'project_name' => $project->name,
             'rooms' => $project->rooms->map(function ($room) {
                 return [
-                    'room_id'   => $room->id,
+                   // 'room_id'   => $room->id,
                     'room_type' => $room->type,
+                    'area'      => $room->area,
                     'devices'   => $this->buildDevicesList($room->devices),
                 ];
             }),

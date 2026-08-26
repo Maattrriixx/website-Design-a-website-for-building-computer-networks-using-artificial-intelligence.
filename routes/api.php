@@ -87,7 +87,7 @@ Route::delete('/devices/{deviceId}', [DeviceController::class, 'destroyDevice'])
     // routes/api.php
 
 
-Route::get('/projects/{project}/rooms-devices', [ProjectController::class, 'roomsWithDevices']);
+Route::get('/projects/{project}/rooms-devices', [ProjectController::class, 'roomsWithDevices'])->middleware('auth:sanctum') ;
     Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{id}/dimensions', [ProjectController::class, 'getImageDimensions']);
 });

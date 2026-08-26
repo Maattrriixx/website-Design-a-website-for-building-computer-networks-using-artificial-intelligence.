@@ -900,231 +900,11 @@ def solve_facility_location(demands, sites, core_point, scale, time_limit_s=30.0
 # ============================================================
 
 def size_switch_ports(load):
-    """Smallest standard switch size (24 or 48) that fits `load` + uplink + 10% spare.
-
-    Kept as-is: still used for Core Switch port sizing, unrelated to
-    the per-site access-switch optimization below.
-    """
+    """Smallest standard switch size (24 or 48) that fits `load` + uplink + 10% spare."""
     required = math.ceil((load + 1) * 1.10)  # +1 reserved uplink port, +10% spare
     if required <= 24:
         return 24
     return 48
-
-
-# ============================================================
-# Multi-type access switch selection & in-room placement (GA)
-# ------------------------------------------------------------
-# The facility-location ILP above assigns every open site the SAME
-# capacity/cost while deciding WHERE to open switches. Only after
-# solving does the old `size_switch_ports()` pick a real hardware size
-# (24 or 48) from whatever load happened to land on that site -- as a
-# single switch.
-#
-# That leaves real savings on the table. Example: 60 endpoints landing
-# on one open site could become 2x48-port switches (minimum possible
-# switch count), or 3x24-port switches, or anything in between once
-# more catalog sizes are available (8/16-port, etc.), each with a
-# different total hardware cost AND a different total cable length
-# once the room's demand points are actually split between several
-# switch positions instead of one.
-#
-# So for every open site we now ask three questions together:
-#   1) how many physical switches does this load need at minimum /
-#      maximum (switch_count_bounds), given the switch catalog?
-#   2) which catalog type should each one be?
-#   3) if more than one, where inside the room should each one
-#      physically sit to minimize total cable length?
-# A Genetic Algorithm searches (2) and (3) jointly for every switch
-# count in the range from (1), and keeps the cheapest feasible result.
-# ============================================================
-
-SWITCH_CATALOG = [
-    # (usable_ports, price) -- smaller port count = cheaper, matching
-    # the standard market pricing curve (placeholder prices; swap in
-    # real vendor quotes whenever available, nothing else changes).
-    (8, 80),
-    (16, 140),
-    (24, 190),
-    (48, 340),
-]
-
-
-def _switch_usable_capacity(ports):
-    """Ports actually usable for demand devices, after the reserved
-    uplink port and the same 10% spare margin `size_switch_ports`
-    already uses elsewhere in this file."""
-    raw = ports - 1  # 1 port reserved for the uplink to Core
-    return max(0, math.floor(raw / 1.10))
-
-
-_SWITCH_CAPACITY = {ports: _switch_usable_capacity(ports) for ports, _ in SWITCH_CATALOG}
-_MAX_SWITCH_CAPACITY = max(_SWITCH_CAPACITY.values())
-_MIN_SWITCH_CAPACITY = min(c for c in _SWITCH_CAPACITY.values() if c > 0)
-
-
-def switch_count_bounds(load):
-    """
-    Minimum and maximum number of physical switches a given load could
-    plausibly need:
-      - minimum: using only the biggest catalog switch (48-port)
-      - maximum: using only the smallest catalog switch (8-port)
-    e.g. load=60 -> min 2 (2x48-port), max 8 (8x8-port). The GA below
-    searches this whole range for the actual cheapest combination.
-    """
-    if load <= 0:
-        return 0, 0
-    min_k = max(1, math.ceil(load / _MAX_SWITCH_CAPACITY))
-    max_k = max(1, math.ceil(load / _MIN_SWITCH_CAPACITY))
-    max_k = min(max_k, load)  # never more switches than devices to serve
-    return min_k, max_k
-
-
-def _combo_hardware_cost(ports_list):
-    price_by_ports = dict(SWITCH_CATALOG)
-    return sum(price_by_ports[p] for p in ports_list)
-
-
-def _combo_capacity(ports_list):
-    return sum(_SWITCH_CAPACITY[p] for p in ports_list)
-
-
-def choose_switch_configuration(
-    site, load, demand_points, core_point, scale,
-    region_polygon=None,
-    pop=24, gens=30, mut=0.2, seed=42,
-):
-    """
-    Genetic algorithm: decide how many access switches this site's
-    load needs, which catalog type each one is, and (when there is
-    more than one) where inside the room each one should physically
-    sit, to minimize hardware + endpoint-cable + uplink cost together.
-
-    demand_points: [(demand_id, x, y), ...] the ILP already assigned
-                   to this site.
-    Returns (switches, demand_to_local_index):
-      switches: [{'x','y','ports','assigned_load'}, ...]
-      demand_to_local_index: demand_id -> index into `switches`
-    """
-    import random as _random
-    rng = _random.Random(seed)
-
-    if load <= 0:
-        return [], {}
-
-    min_k, max_k = switch_count_bounds(load)
-    ports_options = [p for p, _ in SWITCH_CATALOG]
-
-    def random_combo():
-        k = rng.randint(min_k, max_k)
-        return [rng.choice(ports_options) for _ in range(k)]
-
-    def positions_for_combo(k):
-        """k spread-out candidate positions inside the room (reuses
-        the same farthest-point spreading already used elsewhere in
-        this file for candidate switch sites / endpoint placement)."""
-        if k <= 1:
-            return [(site['x'], site['y'])]
-        preferred = Point(site['x'], site['y'])
-        if region_polygon is not None and not region_polygon.is_empty:
-            return distribute_points_in_region(region_polygon, k, preferred, min_separation=8.0)
-        return [(site['x'], site['y'])] * k
-
-    def decode(combo):
-        k = len(combo)
-        if _combo_capacity(combo) < load:
-            return None  # infeasible: not enough total capacity
-
-        positions = positions_for_combo(k)
-        sub_load = [0] * k
-        sub_demand_ids = [[] for _ in range(k)]
-        cable_cm = 0.0
-
-        # Partition demands to their nearest switch position that
-        # still has spare capacity (greedy nearest-feasible).
-        for demand_id, dx, dy in demand_points:
-            order = sorted(
-                range(k),
-                key=lambda i: manhattan_cm(dx, dy, positions[i][0], positions[i][1], scale),
-            )
-            placed = False
-            for i in order:
-                if sub_load[i] < _SWITCH_CAPACITY[combo[i]]:
-                    sub_load[i] += 1
-                    sub_demand_ids[i].append(demand_id)
-                    cable_cm += manhattan_cm(dx, dy, positions[i][0], positions[i][1], scale)
-                    placed = True
-                    break
-            if not placed:
-                return None  # this combo/partition can't actually fit everyone
-
-        uplink_cm = sum(
-            manhattan_cm(positions[i][0], positions[i][1], core_point[0], core_point[1], scale)
-            for i in range(k)
-        )
-        hw_cost_cm_equiv = _combo_hardware_cost(combo) * 100.0  # same cm-cost scale as cabling
-
-        total_cost = hw_cost_cm_equiv + cable_cm + uplink_cm
-        return total_cost, positions, sub_load, sub_demand_ids
-
-    def fitness(combo):
-        decoded = decode(combo)
-        return decoded[0] if decoded is not None else float('inf')
-
-    population = [random_combo() for _ in range(pop)]
-    best_combo, best_fit = None, float('inf')
-
-    for _ in range(gens):
-        fits = [fitness(c) for c in population]
-        gen_best = min(range(len(population)), key=lambda i: fits[i])
-        if fits[gen_best] < best_fit:
-            best_fit = fits[gen_best]
-            best_combo = population[gen_best][:]
-
-        ranked = sorted(range(len(population)), key=lambda i: fits[i])
-        elite = [population[i][:] for i in ranked[:4]]
-        new_pop = elite[:]
-
-        def tournament():
-            cand = rng.sample(list(zip(population, fits)), min(3, len(population)))
-            return min(cand, key=lambda x: x[1])[0]
-
-        while len(new_pop) < pop:
-            p1, p2 = tournament(), tournament()
-            cut = min(len(p1), len(p2))
-            point = rng.randint(1, cut) if cut > 1 else 1
-            child = p1[:point] + p2[point:]
-            if child and rng.random() < mut:
-                idx = rng.randrange(len(child))
-                child[idx] = rng.choice(ports_options)
-            if len(child) < max_k and rng.random() < mut * 0.5:
-                child.append(rng.choice(ports_options))
-            if len(child) > min_k and rng.random() < mut * 0.5:
-                child.pop(rng.randrange(len(child)))
-            new_pop.append(child)
-
-        population = new_pop[:pop]
-
-    if best_combo is None:
-        best_combo = [ports_options[-1]] * min_k
-
-    decoded = decode(best_combo)
-    if decoded is None:
-        best_combo = [ports_options[-1]] * max_k
-        decoded = decode(best_combo)
-
-    _, positions, sub_load, sub_demand_ids = decoded
-
-    switches = []
-    demand_to_local_index = {}
-    for i, ports in enumerate(best_combo):
-        switches.append({
-            'x': positions[i][0], 'y': positions[i][1],
-            'ports': ports, 'assigned_load': sub_load[i],
-        })
-        for demand_id in sub_demand_ids[i]:
-            demand_to_local_index[demand_id] = i
-
-    return switches, demand_to_local_index
 
 
 def generate_devices(
@@ -1137,7 +917,6 @@ def generate_devices(
     backbone_center,
     room_types_by_id,
     scale,
-    polygon_by_room_id=None,
 ):
     devices = []
     dev_id = 0
@@ -1146,60 +925,34 @@ def generate_devices(
     site_by_id = {s['site_id']: s for s in sites}
 
     # --------------------------------------------------------
-    # Access switches -- one OR MORE physical switches per open site,
-    # sized and positioned by the GA in choose_switch_configuration().
-    # switch_device_by_site_id[site_id] is now a LIST (may have more
-    # than one entry), and demand_to_switch_device_id maps each demand
-    # straight to the exact switch device it connects to (needed
-    # because a site's demands may now be split across several
-    # physical switches).
+    # Access switches (one device per open candidate site).
     # --------------------------------------------------------
-    switch_device_by_site_id = defaultdict(list)
-    demand_to_switch_device_id = {}
+    switch_device_by_site_id = {}
+    load_by_site = defaultdict(int)
 
-    demands_by_site = defaultdict(list)
-    for d in demands:
-        demands_by_site[assignment[d['demand_id']]].append((d['demand_id'], d['x'], d['y']))
+    for demand_id, site_id in assignment.items():
+        load_by_site[site_id] += 1
 
     for site_id in open_site_ids:
         site = site_by_id[site_id]
-        site_demands = demands_by_site.get(site_id, [])
-        load = len(site_demands)
+        load = load_by_site.get(site_id, 0)
+        ports = size_switch_ports(load)
 
-        region_polygon = None
-        if polygon_by_room_id is not None:
-            region_polygon = polygon_by_room_id.get(site['room_id'])
-
-        switches, demand_to_local_idx = choose_switch_configuration(
-            site, load, site_demands, backbone_center, scale,
-            region_polygon=region_polygon,
-        )
-
-        local_devices = []
-        for local_idx, cfg in enumerate(switches):
-            unit_note = f", unit {local_idx + 1}/{len(switches)}" if len(switches) > 1 else ''
-            sw = {
-                'device_id': dev_id,
-                'type': 'Switch',
-                'room_id': site['room_id'],
-                'x': float(cfg['x']),
-                'y': float(cfg['y']),
-                'ports': cfg['ports'],
-                'assigned_load': cfg['assigned_load'],
-                'notes': (
-                    f"Access Switch (room {site['room_id']}, "
-                    f"load {cfg['assigned_load']}/{cfg['ports'] - 1}{unit_note})"
-                ),
-                'connectivity': 'wired',
-                'vlan': VLANS['vlan_10'],
-            }
-            devices.append(sw)
-            switch_device_by_site_id[site_id].append(sw)
-            local_devices.append(sw)
-            dev_id += 1
-
-        for demand_id, local_idx in demand_to_local_idx.items():
-            demand_to_switch_device_id[demand_id] = local_devices[local_idx]['device_id']
+        sw = {
+            'device_id': dev_id,
+            'type': 'Switch',
+            'room_id': site['room_id'],
+            'x': float(site['x']),
+            'y': float(site['y']),
+            'ports': ports,
+            'assigned_load': load,
+            'notes': f"Access Switch (room {site['room_id']}, load {load}/{ports - 1})",
+            'connectivity': 'wired',
+            'vlan': VLANS['vlan_10'],
+        }
+        devices.append(sw)
+        switch_device_by_site_id[site_id] = sw
+        dev_id += 1
 
     # --------------------------------------------------------
     # Endpoints & Cameras.
@@ -1248,8 +1001,7 @@ def generate_devices(
     # port (Proxy, Server, DNS, DHCP) -- deterministic, not part of
     # the ILP.
     core_direct_member_count = 4  # Proxy + Server + DNS + DHCP
-    total_access_switches = sum(len(v) for v in switch_device_by_site_id.values())
-    core_ports = size_switch_ports(total_access_switches + core_direct_member_count)
+    core_ports = size_switch_ports(len(open_site_ids) + core_direct_member_count)
 
     core_x, core_y = place_central((0, 0))
     devices.append({
@@ -1359,12 +1111,13 @@ def generate_devices(
 
     if security_room_id is not None:
         # Reuse the Security room's own switch (if it has one) or the
-        # nearest open switch overall, same rule as any camera. A site
-        # may now host more than one physical switch, so flatten first.
-        all_switches = [sw for sw_list in switch_device_by_site_id.values() for sw in sw_list]
-        security_switches = [sw for sw in all_switches if sw['room_id'] == security_room_id]
+        # nearest open switch overall, same rule as any camera.
+        security_switches = [
+            sw for sw in switch_device_by_site_id.values()
+            if sw['room_id'] == security_room_id
+        ]
         if not security_switches:
-            security_switches = all_switches
+            security_switches = list(switch_device_by_site_id.values())
 
         nearest_sw = min(
             security_switches,
@@ -1393,7 +1146,6 @@ def generate_devices(
         devices,
         device_by_demand_id,
         switch_device_by_site_id,
-        demand_to_switch_device_id,
         core_sw_id,
         proxy_id,
         firewall_id,
@@ -1415,7 +1167,6 @@ def build_connections(
     demands,
     device_by_demand_id,
     switch_device_by_site_id,
-    demand_to_switch_device_id,
     assignment,
     core_sw_id,
     proxy_id,
@@ -1438,7 +1189,8 @@ def build_connections(
     # --------------------------------------------------------
     for d in demands:
         dev = device_by_demand_id[d['demand_id']]
-        sw = devices_by_id[demand_to_switch_device_id[d['demand_id']]]
+        site_id = assignment[d['demand_id']]
+        sw = switch_device_by_site_id[site_id]
 
         dist_m = manhattan_cm(dev['x'], dev['y'], sw['x'], sw['y'], scale) / 100.0
 
@@ -1469,8 +1221,7 @@ def build_connections(
     # --------------------------------------------------------
     core_sw = devices_by_id[core_sw_id]
 
-    all_access_switches = [sw for sw_list in switch_device_by_site_id.values() for sw in sw_list]
-    for sw in all_access_switches:
+    for sw in switch_device_by_site_id.values():
         dist_m = manhattan_cm(sw['x'], sw['y'], core_sw['x'], core_sw['y'], scale) / 100.0
         connections.append({
             'from': sw['device_id'],
@@ -1558,7 +1309,6 @@ def run_wired_optimizer(
         }
 
     room_types_by_id = {ids[i]: types[i] for i in range(len(ids))}
-    polygon_by_room_id = {ids[i]: polygons[i] for i in range(len(ids))}
 
     # --------------------------------------------------------
     # Backbone room: deterministic pick, raises if none exists.
@@ -1586,19 +1336,16 @@ def run_wired_optimizer(
     # --------------------------------------------------------
     (
         devices, device_by_demand_id, switch_device_by_site_id,
-        demand_to_switch_device_id,
         core_sw_id, proxy_id, firewall_id, router_id, modem_id,
         server_id, dns_id, dhcp_id, nvr_device, nvr_nearest_switch_id,
     ) = generate_devices(
         demands, sites, open_site_ids, assignment,
         backbone_room_id, backbone_polygon, backbone_center,
         room_types_by_id, physical_scale,
-        polygon_by_room_id=polygon_by_room_id,
     )
 
     connections = build_connections(
-        demands, device_by_demand_id, switch_device_by_site_id,
-        demand_to_switch_device_id, assignment,
+        demands, device_by_demand_id, switch_device_by_site_id, assignment,
         core_sw_id, proxy_id, firewall_id, router_id, modem_id,
         server_id, dns_id, dhcp_id, nvr_device, nvr_nearest_switch_id,
         devices, physical_scale,
@@ -1612,9 +1359,7 @@ def run_wired_optimizer(
             'total_devices': len(devices),
             'total_endpoints': sum(1 for d in devices if d['type'] == 'Endpoint'),
             'total_cameras': sum(1 for d in devices if d['type'] == 'Camera'),
-            'total_access_switches': sum(
-                1 for d in devices if d['type'] == 'Switch'
-            ),
+            'total_access_switches': len(open_site_ids),
             'backbone_room_id': backbone_room_id,
             'scale_m_per_px': physical_scale,
             'room_areas_m2': {

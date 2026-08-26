@@ -28,3 +28,4 @@ Thumbs.db
 /public/storage
 py/myenv
   __pycache__/
+"py/__pycache__/" 
