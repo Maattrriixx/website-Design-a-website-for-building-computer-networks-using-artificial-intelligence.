@@ -76,6 +76,27 @@
   background: var(--bg-surface);
 }
 
+.adminDashboardBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--ff-mono);
+}
+
+.adminDashboardBtn:hover {
+  color: var(--bg-base);
+  background: var(--cyan);
+}
+
 .headerLogoutBtn {
   display: flex;
   align-items: center;

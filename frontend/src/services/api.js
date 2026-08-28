@@ -23,7 +23,10 @@ async function _apiRequest(method, endpoint, body = null, isFormData = false) {
       const errorMessage = data.errors[firstErrorKey][0];
       throw new Error(errorMessage);
     }
-    throw new Error(data.error || data.message || `Request failed (${res.status})`);
+    const error = new Error(data.error || data.message || `Request failed (${res.status})`);
+    error.status = res.status;
+    error.data = data;
+    throw error;
   }
   return data;
 }
@@ -174,6 +177,25 @@ export const ProjectsAPI = {
   openInApp(projectId) {
     Utils.queueOpenProject(projectId);
     window.location.href = '/designer';
+  },
+};
+
+export const DashboardAPI = {
+  async get() {
+    return _apiRequest('GET', '/dashboard');
+  },
+  async subscribe(plan) {
+    return _apiRequest('POST', '/dashboard/subscribe', { plan });
+  },
+  async users() {
+    const data = await _apiRequest('GET', '/dashboard/users');
+    return data.users || [];
+  },
+  async deleteUser(userId) {
+    return _apiRequest('DELETE', `/dashboard/users/${userId}`);
+  },
+  async userProjects(userId) {
+    return _apiRequest('GET', `/dashboard/users/${userId}/projects`);
   },
 };
 

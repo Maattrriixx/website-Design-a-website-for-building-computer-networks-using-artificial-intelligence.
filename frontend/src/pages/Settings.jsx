@@ -434,6 +434,17 @@ export default function Settings() {
           <span className={styles.headerPageLabel}>/ Settings</span>
         </div>
         <div className={styles.headerRight}>
+          {user?.role === 'admin' && (
+            <button onClick={() => navigate('/dashboard')} className={styles.adminDashboardBtn}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <rect x="1.5" y="1.5" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                <rect x="8" y="1.5" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                <rect x="1.5" y="8" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                <rect x="8" y="8" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+              </svg>
+              Admin Dashboard
+            </button>
+          )}
           <button onClick={() => navigate('/designer')} className={styles.backBtn}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
               <path d="M8 2L4 6.5 8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

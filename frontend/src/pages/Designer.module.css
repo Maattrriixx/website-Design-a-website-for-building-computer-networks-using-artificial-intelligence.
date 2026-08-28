@@ -1,3 +1,43 @@
+.subscriptionBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 8, 18, 0.82);
+}
+
+.subscriptionModal {
+  width: min(520px, 100%);
+  position: relative;
+  padding: 30px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hi);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45), 0 0 35px var(--cyan-dim);
+}
+
+.subscriptionClose {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.subscriptionClose:hover { color: var(--text-1); }
+.subscriptionKicker { color: var(--orange); font-size: 9px; letter-spacing: 1.6px; }
+.subscriptionModal h2 { margin-top: 8px; color: var(--text-1); font: 700 24px var(--ff-disp); }
+.subscriptionIntro { max-width: 420px; margin: 10px 0 22px; color: var(--text-2); font-size: 11px; line-height: 1.7; }
+.planGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.planOption { padding: 16px 9px; border: 1px solid var(--border); background: var(--bg-base); color: var(--text-1); cursor: pointer; text-align: left; font: 11px var(--ff-mono); }
+.planOption:hover, .planSelected { border-color: var(--cyan); background: var(--cyan-dim); }
+.planOption span, .planOption small { display: block; }.planOption small { margin-top: 6px; color: var(--text-2); font-size: 9px; }.planSelected small { color: var(--cyan); }
+.subscriptionAction { width: 100%; margin-top: 18px; padding: 12px 16px; border: 1px solid var(--cyan); background: var(--cyan); color: var(--bg-base); cursor: pointer; font: 700 10px var(--ff-mono); letter-spacing: .5px; }.subscriptionAction:hover { box-shadow: 0 0 18px var(--cyan-glow); }.subscriptionAction:disabled { opacity: .6; cursor: wait; }.subscriptionAction span { float: right; font-size: 16px; line-height: 10px; }.subscriptionError { margin-top: 12px; color: var(--red); font-size: 10px; }.subscriptionNote { display: block; margin-top: 14px; color: var(--text-3); font-size: 9px; }
+@media (max-width: 520px) { .subscriptionModal { padding: 25px 20px; }.planGrid { grid-template-columns: 1fr; }.planOption { padding: 12px; } }
 .app {
   display: flex;
   flex-direction: column;

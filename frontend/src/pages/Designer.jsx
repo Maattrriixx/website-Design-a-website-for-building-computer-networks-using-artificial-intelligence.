@@ -8,7 +8,7 @@ import CanvasArea from '../components/CanvasArea';
 import StatusBar from '../components/StatusBar';
 import LoadingOverlay from '../components/LoadingOverlay';
 import styles from './Designer.module.css';
-import { ProjectsAPI, RoomsAPI, DevicesAPI, API_CONFIG } from '../services/api';
+import { ProjectsAPI, RoomsAPI, DevicesAPI, DashboardAPI, API_CONFIG } from '../services/api';
 import { exportRoomsPdf } from '../utils/exportPdf';
 
 // Device colors mapping
@@ -108,6 +108,10 @@ export default function Designer() {
   const [aiStatus, setAiStatus] = useState({ label: 'AI Ready', processing: false });
   const [loading, setLoading] = useState({ show: false, title: '', sub: '' });
   const [saveBtnSaved, setSaveBtnSaved] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] = useState('monthly');
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState('');
   // 'network' | 'vlan'
   const [viewMode, setViewMode] = useState('network');
 
@@ -1006,10 +1010,29 @@ export default function Designer() {
       setStatus({ msg: `Detected ${scaled.length} rooms`, type: 'ok' });
       setAiStatus({ label: 'Rooms analyzed', processing: false });
     } catch (err) {
+      if (err.status === 402 && err.data?.subscription_required) {
+        setSubscriptionError('');
+        setSubscriptionOpen(true);
+        return;
+      }
       setStatus({ msg: `Analyze failed: ${err.message}`, type: 'err' });
       setAiStatus({ label: 'Error', processing: false });
     } finally {
       setLoading({ show: false, title: '', sub: '' });
+    }
+  };
+
+  const activateSubscription = async () => {
+    setSubscriptionLoading(true);
+    setSubscriptionError('');
+    try {
+      await DashboardAPI.subscribe(subscriptionPlan);
+      setSubscriptionOpen(false);
+      await analyzeRooms();
+    } catch (err) {
+      setSubscriptionError(err.message || 'Unable to activate subscription');
+    } finally {
+      setSubscriptionLoading(false);
     }
   };
 
@@ -2328,6 +2351,32 @@ const handleDeviceModalCancel = () => setPendingDevice(null);
         onCancel={handleDeviceModalCancel}
       />
 )}
+      {subscriptionOpen && (
+        <div className={styles.subscriptionBackdrop} role="dialog" aria-modal="true" aria-labelledby="subscription-title">
+          <div className={styles.subscriptionModal}>
+            <button className={styles.subscriptionClose} onClick={() => setSubscriptionOpen(false)} aria-label="Close">×</button>
+            <div className={styles.subscriptionKicker}>PROJECT LIMIT REACHED</div>
+            <h2 id="subscription-title">Keep building your network</h2>
+            <p className={styles.subscriptionIntro}>You have used your 5 free projects. Choose a plan to continue creating designs.</p>
+            <div className={styles.planGrid}>
+              {[
+                ['weekly', 'Weekly', '7 days'],
+                ['monthly', 'Monthly', '30 days'],
+                ['yearly', 'Yearly', '12 months'],
+              ].map(([value, label, duration]) => (
+                <button key={value} className={`${styles.planOption} ${subscriptionPlan === value ? styles.planSelected : ''}`} onClick={() => setSubscriptionPlan(value)}>
+                  <span>{label}</span><small>{duration}</small>
+                </button>
+              ))}
+            </div>
+            {subscriptionError && <div className={styles.subscriptionError}>{subscriptionError}</div>}
+            <button className={styles.subscriptionAction} onClick={activateSubscription} disabled={subscriptionLoading}>
+              {subscriptionLoading ? 'ACTIVATING...' : 'CONTINUE WITH PLAN'} <span>→</span>
+            </button>
+            <small className={styles.subscriptionNote}>Subscription activation is currently in test mode.</small>
+          </div>
+        </div>
+      )}
       
     </div>
   );

@@ -25,6 +25,18 @@ class ProjectController extends Controller
     }
     public function StoreProject(StoreProject $req)
     {
+        $user = Auth::user();
+        $projectCount = Project::where('user_id', $user->id)->count();
+
+        if ($user->role !== 'admin' && !$user->hasActiveSubscription() && $projectCount >= 5) {
+            return response()->json([
+                'message' => 'You have reached the free limit of 5 projects. Please subscribe to create more projects.',
+                'subscription_required' => true,
+                'projects_count' => $projectCount,
+                'free_project_limit' => 5,
+            ], 402);
+        }
+
         // البيانات مفلترة ومحتوية على كل شروط الـ Validation
         $validated = $req->validated();
 

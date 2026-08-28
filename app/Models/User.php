@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -33,7 +31,20 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'subscription_started_at' => 'datetime',
+            'subscription_expires_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscription_expires_at !== null
+            && $this->subscription_expires_at->isFuture();
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
     }
 }

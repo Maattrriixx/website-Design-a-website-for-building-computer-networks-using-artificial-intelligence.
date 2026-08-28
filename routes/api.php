@@ -8,6 +8,7 @@ use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\DashboradController;
 
 
 
@@ -34,6 +35,13 @@ Route::put('/Change_Name', [UserController::class, 'Change_Name'])->middleware('
 Route::delete('/Delete_Account', [UserController::class, 'Delete_Account'])->middleware(['auth:sanctum', 'throttle:5,30']);
 
 Route::get('/Display_Icon', [IconController::class, 'Display_Icon'])->middleware('auth:sanctum');
+
+Route::get('/dashboard', [DashboradController::class, 'index'])->middleware('auth:sanctum');
+Route::get('/dashboard/subscription', [DashboradController::class, 'subscriptionStatus'])->middleware('auth:sanctum');
+Route::post('/dashboard/subscribe', [DashboradController::class, 'subscribe'])->middleware('auth:sanctum');
+Route::get('/dashboard/users', [DashboradController::class, 'users'])->middleware('auth:sanctum');
+Route::get('/dashboard/users/{user}/projects', [DashboradController::class, 'userProjects'])->middleware('auth:sanctum');
+Route::delete('/dashboard/users/{user}', [DashboradController::class, 'deleteUser'])->middleware('auth:sanctum');
 
 
 

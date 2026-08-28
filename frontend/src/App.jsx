@@ -7,6 +7,7 @@ import NewPassword from './pages/NewPassword';
 import Settings from './pages/Settings';
 import Designer from './pages/Designer';
 import VerificationPending from './pages/VerificationPending';
+import Dashboard from './pages/Dashboard';
 
 // Protected Route Component - requires authentication
 function ProtectedRoute({ children }) {
@@ -60,6 +61,15 @@ function PublicRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'admin') return <Navigate to="/designer" replace />;
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -77,6 +87,7 @@ function App() {
           {/* Protected routes - require authentication */}
           <Route path="/designer" element={<ProtectedRoute><Designer /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
           
           {/* Default route */}
           <Route path="/" element={<Navigate to="/login" />} />
