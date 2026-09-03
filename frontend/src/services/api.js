@@ -26,6 +26,7 @@ async function _apiRequest(method, endpoint, body = null, isFormData = false) {
     const error = new Error(data.error || data.message || `Request failed (${res.status})`);
     error.status = res.status;
     error.data = data;
+    error.endpoint = endpoint;
     throw error;
   }
   return data;

@@ -58,7 +58,7 @@ class DashboradController extends Controller
             'active' => $user->hasActiveSubscription(),
             'started_at' => $user->subscription_started_at,
             'expires_at' => $user->subscription_expires_at,
-            'free_project_limit' => 5,
+            'free_project_limit' => 2,
             'projects_count' => Project::where('user_id', $user->id)->count(),
         ]);
     }
